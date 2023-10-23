@@ -139,6 +139,10 @@ void TimestampPattern::init () {
     patterns.emplace_back(0, "%m-%d %H:%M:%S.%3");
 
     // Initialize m_known_ts_patterns with vector's contents
+    // E.g. 1697728829.424000024,"getLocalIp:51410:getLocalIp: 192.168.225.120 zlegion","DEBUG"
+    patterns.emplace_back(0, "%C");
+
+    // Initialize m_known_ts_patterns with vector's contents
     m_known_ts_patterns_len = patterns.size();
     m_known_ts_patterns = std::make_unique<TimestampPattern[]>(m_known_ts_patterns_len);
     for (size_t i = 0; i < patterns.size(); ++i) {
@@ -226,7 +230,40 @@ bool TimestampPattern::parse_timestamp (const string& line, epochtime_t& timesta
                     }
                     ++line_ix;
                     break;
+                case 'C': { // Zero-padded year with century
+                    constexpr int cFieldLength = 20;
+                    if (line_ix + cFieldLength > line_length) {
+                        // Too short
+                        return false;
+                    }
+		    // fluent bit epoch is in seconds.nanoseconds, we need to switch it to miliseconds, so we simply loop for 14 characters ignoring the dot
+                    long value=0;
 
+                     for (size_t ix = 0 ; ix < 14; ix++) {
+			char c = line[ts_begin_ix+ix];
+			if (c != '.')
+			{
+				if (c < '0' || c > '9') {
+				    return false;
+				}
+
+				value *= 10;
+				value += c - '0';
+			}
+			 
+		    }
+		 
+                    line_ix += cFieldLength;
+                    
+		    timestamp = value;
+
+		    timestamp_begin_pos = ts_begin_ix;
+		    timestamp_end_pos = line_ix;
+
+		    return true;
+
+                    break;
+                }
                 case 'y': { // Zero-padded year in century
                     constexpr int cFieldLength = 2;
                     if (line_ix + cFieldLength > line_length) {
