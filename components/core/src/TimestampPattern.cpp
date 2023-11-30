@@ -613,7 +613,12 @@ void TimestampPattern::insert_formatted_timestamp (const epochtime_t timestamp, 
 
     // Separate parts of timestamp
     long long tseconds=timestamp/1000;
-    long long remainder=timestamp%1000;
+    string remainderstr= std::to_string(timestamp%1000);
+    while(remainderstr.length()<9)
+    {
+        remainderstr+="0";
+    }
+
     auto timestamp_point = date::sys_days(date::year(1970)/1/1) + std::chrono::milliseconds(timestamp);
     auto timestampms = std::chrono::duration_cast<std::chrono::milliseconds>(
         timestamp_point.time_since_epoch()
@@ -763,7 +768,7 @@ void TimestampPattern::insert_formatted_timestamp (const epochtime_t timestamp, 
 
 
 */
-                      new_msg += std::to_string(tseconds)+"."+std::to_string(remainder)+"000000"; // Divide by 1 million to convert nanoseconds to milliseconds
+                      new_msg += std::to_string(tseconds)+"."+remainderstr; // Divide by 1 million to convert nanoseconds to milliseconds
                     break;
                 default: {
                     throw OperationFailed(ErrorCode_Unsupported, __FILENAME__, __LINE__);
