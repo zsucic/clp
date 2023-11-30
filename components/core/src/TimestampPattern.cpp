@@ -612,7 +612,12 @@ void TimestampPattern::insert_formatted_timestamp (const epochtime_t timestamp, 
     new_msg.assign(msg, 0, ts_begin_ix);
 
     // Separate parts of timestamp
+    long long tseconds=timestamp/1000;
+    long long remainder=timestamp%1000;
     auto timestamp_point = date::sys_days(date::year(1970)/1/1) + std::chrono::milliseconds(timestamp);
+    auto timestampms = std::chrono::duration_cast<std::chrono::milliseconds>(
+        timestamp_point.time_since_epoch()
+    );
     auto timestamp_date = date::floor<date::days>(timestamp_point);
     int day_of_week_ix = (date::year_month_weekday(timestamp_date).weekday_indexed().weekday() - date::Sunday).count();
     auto year_month_date = date::year_month_day(timestamp_date);
@@ -735,6 +740,31 @@ void TimestampPattern::insert_formatted_timestamp (const epochtime_t timestamp, 
                     append_padded_value(millisecond, '0', 3, new_msg);
                     break;
 
+                case 'C': // Zero-padded millisecond
+//                    append_padded_value(year, '0', 4, new_msg);
+//                    new_msg += "-";
+//                    append_padded_value(month, '0', 2, new_msg);
+//                    new_msg += "-";
+//                    append_padded_value(date, '0', 2, new_msg);
+//                    new_msg += "T";
+//                    append_padded_value(hour, '0', 2, new_msg);
+//                    new_msg += ":";
+//                    append_padded_value(minute, '0', 2, new_msg);
+//                    new_msg += ":";
+//                    append_padded_value(second, '0', 2, new_msg);
+//                    new_msg += ".";
+//                    append_padded_value(millisecond, '0', 3, new_msg);
+/*
+1701297617.573999881,"INFO","collect_and_push_local_clp_stats:378:Pushing metric cnd_main_duration with value 5.561822 tag None from clpnode13 to GCP"
+1701297677.000749072,"INFO","collect_and_push_local_clp_stats:378:Pushing metric cnd_main_duration with value 5.736156 tag None from clpnode13 to GCP"
+1701297737.989000082,"INFO","collect_and_push_local_clp_stats:378:Pushing metric cnd_main_duration with value 5.976013 tag None from clpnode13 to GCP"
+1701297797.839999914,"INFO","collect_and_push_local_clp_stats:378:Pushing metric cnd_main_duration with value 5.826858 tag None from clpnode13 to GCP"
+1638298736.123000000
+
+
+*/
+                      new_msg += std::to_string(tseconds)+"."+std::to_string(remainder)+"000000"; // Divide by 1 million to convert nanoseconds to milliseconds
+                    break;
                 default: {
                     throw OperationFailed(ErrorCode_Unsupported, __FILENAME__, __LINE__);
                 }
